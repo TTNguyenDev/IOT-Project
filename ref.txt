@@ -6,3 +6,8 @@ Requirements:
 
 Ref:
 - Visualize: https://how2electronics.com/iot-air-pollution-monitoring-esp8266/
+
+
+Server:
+Installation list:
+- mosquitto: run on macos (/usr/local/sbin/mosquitto -c /usr/local/etc/mosquitto/mosquitto.conf)
