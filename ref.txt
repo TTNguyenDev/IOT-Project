@@ -1,0 +1,8 @@
+Requirements:
+ - Upload sensor data to server
+ - Visualize data
+ - Show percent of pollution (Sending a mail to client if pollution is too high)
+ - Send data from web/server to iot machine
+
+Ref:
+- Visualize: https://how2electronics.com/iot-air-pollution-monitoring-esp8266/
