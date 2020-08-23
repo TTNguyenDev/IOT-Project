@@ -3,6 +3,12 @@
 
 #include <DHT.h>
 #include "MQ135.h"
+
+//Wifi Manager
+#include <DNSServer.h>
+#include <ESP8266WebServer.h>
+#include <WiFiManager.h>     
+
 int dht_pin = 5;
 
 DHT dht(dht_pin, DHT11);
@@ -23,7 +29,6 @@ char msg[MSG_BUFFER_SIZE];
 unsigned long now;
 unsigned long lastMeasure = 0;
 unsigned long freq = 3000;
-bool firstLuanch = true;
 void setup_wifi()
 {
 
@@ -125,15 +130,8 @@ void loop()
   }
   client.loop();
 
-  if (firstLuanch) {
-    firstLuanch != firstLuanch
-    static char frequence[7];
-    dtostrf(freq, 6, 2, frequence);
-    client.publish("room/frequencyin", frequence);
-  }
-
   now = millis();
-  client.subscribe("room/frequencyout");
+  // client.subscribe("room/frequencyout");
 
   if (now - lastMeasure > freq)
   {
@@ -181,4 +179,25 @@ void readMQ135()
   dtostrf(rzero, 6, 2, gasTemp);
   client.publish("room/gas", gasTemp);
   delay(1000);
+}
+
+void configWifiManager() {
+  WiFiManager wifiManager;
+  wifiManager.setAPCallback(configModeCallback);
+
+  if (!wifiManager.autoConnect()) {
+    Serial.println("failed to connect and hit timeout");
+    //reset and try again, or maybe put it to deep sleep
+    ESP.reset();
+    delay(1000);
+  }
+}
+
+void configModeCallback (WiFiManager *myWiFiManager) {
+  WiFiManager wifiManager;
+  Serial.print("Stored SSID: ");
+  Serial.println(myWiFiManager->getSSID());
+  Serial.print("Stored passphrase: ");
+  Serial.println(myWiFiManager->getPassword());
+
 }
