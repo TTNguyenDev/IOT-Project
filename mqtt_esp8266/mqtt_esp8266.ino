@@ -1,4 +1,4 @@
- #include <ESP8266WiFi.h>
+#include <ESP8266WiFi.h>
 #include <PubSubClient.h>
 
 #include <DHT.h>
@@ -7,25 +7,25 @@ int dht_pin = 5;
 
 DHT dht(dht_pin, DHT11);
 
-float h,t,f;
+float h, t, f;
 // Update these with values suitable for your network.
 
-const char* ssid = "THREE O'CLOCK";
-const char* password = "3open24h";
-const char* mqtt_server = "192.168.1.245";
-
-
-
+const char *ssid = "THREE O'CLOCK";
+const char *password = "3open24h";
+const char *mqtt_server = "192.168.1.245";
 
 WiFiClient espClient;
 PubSubClient client(espClient);
 
-#define MSG_BUFFER_SIZE  (50)
+#define MSG_BUFFER_SIZE (50)
 char msg[MSG_BUFFER_SIZE];
-int value = 0;
+
+unsigned long now;
 unsigned long lastMeasure = 0;
 unsigned long freq = 3000;
-void setup_wifi() {
+bool firstLuanch = true;
+void setup_wifi()
+{
 
   delay(10);
   // We start by connecting to a WiFi network
@@ -36,7 +36,8 @@ void setup_wifi() {
   WiFi.mode(WIFI_STA);
   WiFi.begin(ssid, password);
 
-  while (WiFi.status() != WL_CONNECTED) {
+  while (WiFi.status() != WL_CONNECTED)
+  {
     delay(500);
     Serial.print(".");
   }
@@ -49,60 +50,55 @@ void setup_wifi() {
   Serial.println(WiFi.localIP());
 }
 
-void callback(char* topic, byte* payload, unsigned int length) {
+void callback(char *topic, byte *payload, unsigned int length)
+{
   Serial.print("Message arrived [");
   Serial.print(topic);
   Serial.print("] ");
-  for (int i = 0; i < length; i++) {
+  for (int i = 0; i < length; i++)
+  {
     Serial.print((char)payload[i]);
   }
   Serial.println();
 
-//  // Switch on the LED if an 1 was received as first character
-//  if ((char)payload[0] == '1') {
-//    digitalWrite(BUILTIN_LED, LOW);   // Turn the LED on (Note that LOW is the voltage level
-//    // but actually the LED is on; this is because
-//    // it is active low on the ESP-01)
-//  } else {
-//    digitalWrite(BUILTIN_LED, HIGH);  // Turn the LED off by making the voltage HIGH
-//  }
-    char buffer[128];
-    memcpy(buffer, payload, length);
-    buffer[length] = '\0';
+  char buffer[128];
+  memcpy(buffer, payload, length);
+  buffer[length] = '\0';
 
-    // Convert it to integer
-    char *end = nullptr;
-    long value = strtol(buffer, &end, 10);
+  // Convert it to integer
+  char *end = nullptr;
+  long value = strtol(buffer, &end, 10);
 
-    // Check for conversion errors
-    if (end == buffer)
+  // Check for conversion errors
+  if (end == buffer)
     ; // Conversion error occurred
-    else
+  else
     Serial.println(value);
-    Serial.print("payload: ");
-    Serial.println(value);
-    freq = value;
-    if (topic == "room/frequencyout") {
-      freq = value;
-    }
-
+  Serial.print("payload: ");
+  Serial.println(value);
+  freq = value;
 }
 
-void reconnect() {
+void reconnect()
+{
   // Loop until we're reconnected
-  while (!client.connected()) {
+  while (!client.connected())
+  {
     Serial.print("Attempting MQTT connection...");
     // Create a random client ID
     String clientId = "ESP8266Client-";
     clientId += String(random(0xffff), HEX);
     // Attempt to connect
-    if (client.connect(clientId.c_str())) {
+    if (client.connect(clientId.c_str()))
+    {
       Serial.println("connected");
       // Once connected, publish an announcement...
       client.publish("outTopic", "hello world");
       // ... and resubscribe
       client.subscribe("inTopic");
-    } else {
+    }
+    else
+    {
       Serial.print("failed, rc=");
       Serial.print(client.state());
       Serial.println(" try again in 5 seconds");
@@ -112,49 +108,54 @@ void reconnect() {
   }
 }
 
-void setup() {
-  pinMode(BUILTIN_LED, OUTPUT);     // Initialize the BUILTIN_LED pin as an output
+void setup()
+{
+  pinMode(BUILTIN_LED, OUTPUT); // Initialize the BUILTIN_LED pin as an output
   Serial.begin(115200);
   setup_wifi();
   client.setServer(mqtt_server, 1883);
   client.setCallback(callback);
 }
 
-void loop() {
-
-  if (!client.connected()) {
+void loop()
+{
+  if (!client.connected())
+  {
     reconnect();
   }
   client.loop();
-  static char frequence[7];
-  dtostrf(freq, 6, 2, frequence);
-  //client.publish("room/frequencyin", frequence);
 
-  unsigned long now = millis();
+  if (firstLuanch) {
+    firstLuanch != firstLuanch
+    static char frequence[7];
+    dtostrf(freq, 6, 2, frequence);
+    client.publish("room/frequencyin", frequence);
+  }
+
+  now = millis();
   client.subscribe("room/frequencyout");
-  
-  if (now - lastMeasure > freq) {
+
+  if (now - lastMeasure > freq)
+  {
     lastMeasure = now;
-    //++value;
     Serial.print("Seq loop: ");
     Serial.print(freq);
-//    snprintf (msg, MSG_BUFFER_SIZE, "hello world #%ld", value);
-//    Serial.print("Publish message: ");
-//    Serial.println(msg);
-//    client.publish("outTopic", msg);
+
     readTem();
     readMQ135();
   }
 }
 
-void readTem() {
+void readTem()
+{
   float h = dht.readHumidity();
   float t = dht.readTemperature();
   float f = dht.readTemperature(true);
-  
-  if (isnan(h) || isnan(t) || isnan(f)) {
-      Serial.println("Failed to read from DHT sensor!");
-      return;
+
+  if (isnan(h) || isnan(t) || isnan(f))
+  {
+    Serial.println("Failed to read from DHT sensor!");
+    return;
   }
   Serial.println(h);
   Serial.println(t);
@@ -162,7 +163,7 @@ void readTem() {
   float hic = dht.computeHeatIndex(t, h, false);
   static char temperatureTemp[7];
   dtostrf(hic, 6, 2, temperatureTemp);
-    
+
   static char humidityTemp[7];
   dtostrf(h, 6, 2, humidityTemp);
 
@@ -170,11 +171,12 @@ void readTem() {
   client.publish("room/humidity", humidityTemp);
 }
 
-void readMQ135() {
+void readMQ135()
+{
   MQ135 gasSensor = MQ135(A0); // Attach sensor to pin A0
   float rzero = gasSensor.getRZero();
   Serial.println("Gas: ");
-  Serial.println (rzero);
+  Serial.println(rzero);
   static char gasTemp[7];
   dtostrf(rzero, 6, 2, gasTemp);
   client.publish("room/gas", gasTemp);
