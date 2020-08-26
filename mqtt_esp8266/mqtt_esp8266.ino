@@ -162,13 +162,15 @@ void loop()
 
 void readTem()
 {
-  float h = dht.readHumidity();
-  float t = dht.readTemperature();
-  float f = dht.readTemperature(true);
+  h = dht.readHumidity();
+  t = dht.readTemperature();
+  f = dht.readTemperature(true);
 
   if (isnan(h) || isnan(t) || isnan(f))
   {
     Serial.println("Failed to read from DHT sensor!");
+    h = 0;
+    t = 0;
     return;
   }
   Serial.println(h);
@@ -232,17 +234,22 @@ void configFirebase() {
   }
 }
 void updataServer() {
-  now = millis();
   char buf[16];
   ltoa(now,buf,10);
   char*result1="/";
   char*result2="/"; 
   char*result3="/";   
-  result1= strcat( result1,buf);
-  result2= strcat(result2,buf);
-  result3= strcat(result3,buf);
-  Firebase.setInt(firebaseData,strcat(result1,"/temp"), t);
-  Firebase.setInt(firebaseData,strcat(result2,"/humidity"), h);
-  Firebase.setInt(firebaseData,strcat(result3,"/gas"), rzero);
+  
+  strcpy( result1,buf);
+  strcat(result1,"/temp");
+  Firebase.setInt(firebaseData,result1, t);
+
+  strcpy(result2,buf);
+  strcat(result2,"/humidity");
+  Firebase.setInt(firebaseData,result2, h);
+  
+  strcpy(result3,buf);
+  strcat(result3,"/gas");
+  Firebase.setInt(firebaseData,result3, rzero);
   
 }
