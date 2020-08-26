@@ -3,6 +3,7 @@
 
 #include <DHT.h>
 #include "MQ135.h"
+#include <string.h>
 
 //Wifi Manager
 #include <DNSServer.h>
@@ -10,6 +11,8 @@
 #include <WiFiManager.h>     
 
 #include <FirebaseESP8266.h>
+
+
 
 #define FIREBASE_HOST "https://air-pollution-3ae9f.firebaseio.com/"
 #define FIREBASE_AUTH "0lZIUXRG5JyCDo928qxRy3AWwYNeT1qsAfzrZTaw"
@@ -21,6 +24,7 @@ int dht_pin = 5;
 DHT dht(dht_pin, DHT11);
 
 float h, t, f;
+float rzero;
 // Update these with values suitable for your network.
 
 //const char *ssid = "THREE O'CLOCK";
@@ -32,6 +36,8 @@ PubSubClient client(espClient);
 
 #define MSG_BUFFER_SIZE (50)
 char msg[MSG_BUFFER_SIZE];
+
+char*result="/";
 
 unsigned long now;
 unsigned long lastMeasure = 0;
@@ -128,6 +134,7 @@ void setup()
   setup_wifi();
   client.setServer(mqtt_server, 1883);
   client.setCallback(callback);
+  configFirebase();
 }
 
 void loop()
@@ -141,14 +148,14 @@ void loop()
   now = millis();
   client.subscribe("room/frequencyout");
 
+
   if (now - lastMeasure > freq)
   {
-    lastMeasure = now;
+    lastMeasure = now; 
     readTem();
-    readMQ135();
-    Serial.print("Seq loop: ");
-    Serial.print(freq);
-   client.publish("Warning Pollution", "canh bao"); 
+    readMQ135(); 
+    updataServer();
+    client.publish("Warning Pollution", "canh bao"); 
   }
   
 }
@@ -176,22 +183,22 @@ void readTem()
 
   client.publish("room/temp", temperatureTemp);
   client.publish("room/humidity", humidityTemp);
-
-  Firebase.setInt(firebaseData, "/Nodes/temp", temperatureTemp);
-  Firebase.setInt(firebaseData, "/Nodes/humidity", humidityTemp);
+  
+//  Firebase.setInt(firebaseData,strcat(result,"/temp"), t);
+//  Firebase.setInt(firebaseData,strcat(result,"/humidity"), h);
 }
 
 void readMQ135()
 {
   MQ135 gasSensor = MQ135(A0); // Attach sensor to pin A0
-  float rzero = gasSensor.getRZero();
+  rzero = gasSensor.getRZero();
   Serial.println("Gas: ");
   Serial.println(rzero);
   static char gasTemp[7];
   dtostrf(rzero, 6, 2, gasTemp);
   client.publish("room/gas", gasTemp);
 
-  Firebase.setInt(firebaseData, "/Nodes/gas", gasTemp);
+// /Firebase.setInt(firebaseData,strcat(result,"/gas"), rzero);
 }
 
 void configWifiManager() {
@@ -211,16 +218,31 @@ void configModeCallback (WiFiManager *myWiFiManager) {
   Serial.print("Stored SSID: ");
   Serial.println(myWiFiManager->getConfigPortalSSID());
   Serial.print("Stored passphrase: ");
-  Serial.println(myWiFiManager->getPassword());
+//  Serial.println(myWiFiManager->getPassword());
 }
 
 void configFirebase() {
   Firebase.begin(FIREBASE_HOST, FIREBASE_AUTH);
-  Firebase.reconnetWiFi(true);
+  Firebase.reconnectWiFi(true);
 
   if (!Firebase.beginStream(firebaseData, "/Nodes/")) {
     Serial.println("Could not beigin stream");
     Serial.println("REASON: " + firebaseData.errorReason());
     Serial.println();
   }
+}
+void updataServer() {
+  now = millis();
+  char buf[16];
+  ltoa(now,buf,10);
+  char*result1="/";
+  char*result2="/"; 
+  char*result3="/";   
+  result1= strcat( result1,buf);
+  result2= strcat(result2,buf);
+  result3= strcat(result3,buf);
+  Firebase.setInt(firebaseData,strcat(result1,"/temp"), t);
+  Firebase.setInt(firebaseData,strcat(result2,"/humidity"), h);
+  Firebase.setInt(firebaseData,strcat(result3,"/gas"), rzero);
+  
 }
