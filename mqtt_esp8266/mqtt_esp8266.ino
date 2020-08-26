@@ -9,6 +9,13 @@
 #include <ESP8266WebServer.h>
 #include <WiFiManager.h>     
 
+#include <FirebaseESP8266.h>
+
+#define FIREBASE_HOST "https://air-pollution-3ae9f.firebaseio.com/"
+#define FIREBASE_AUTH "0lZIUXRG5JyCDo928qxRy3AWwYNeT1qsAfzrZTaw"
+
+FirebaseData firebaseData;
+
 int dht_pin = 5;
 
 DHT dht(dht_pin, DHT11);
@@ -169,6 +176,9 @@ void readTem()
 
   client.publish("room/temp", temperatureTemp);
   client.publish("room/humidity", humidityTemp);
+
+  Firebase.setInt(firebaseData, "/Nodes/temp", temperatureTemp);
+  Firebase.setInt(firebaseData, "/Nodes/humidity", humidityTemp);
 }
 
 void readMQ135()
@@ -180,7 +190,8 @@ void readMQ135()
   static char gasTemp[7];
   dtostrf(rzero, 6, 2, gasTemp);
   client.publish("room/gas", gasTemp);
-  delay(1000);
+
+  Firebase.setInt(firebaseData, "/Nodes/gas", gasTemp);
 }
 
 void configWifiManager() {
@@ -200,6 +211,16 @@ void configModeCallback (WiFiManager *myWiFiManager) {
   Serial.print("Stored SSID: ");
   Serial.println(myWiFiManager->getConfigPortalSSID());
   Serial.print("Stored passphrase: ");
-  //Serial.println(myWiFiManager->getPassword());
+  Serial.println(myWiFiManager->getPassword());
+}
 
+void configFirebase() {
+  Firebase.begin(FIREBASE_HOST, FIREBASE_AUTH);
+  Firebase.reconnetWiFi(true);
+
+  if (!Firebase.beginStream(firebaseData, "/Nodes/")) {
+    Serial.println("Could not beigin stream");
+    Serial.println("REASON: " + firebaseData.errorReason());
+    Serial.println();
+  }
 }
