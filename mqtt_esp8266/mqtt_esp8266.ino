@@ -18,7 +18,7 @@ float h, t, f;
 
 //const char *ssid = "THREE O'CLOCK";
 //const char *password = "3open24h";
-const char *mqtt_server = "192.168.1.245";
+const char *mqtt_server = "192.168.1.124";
 
 WiFiClient espClient;
 PubSubClient client(espClient);
@@ -82,7 +82,7 @@ void callback(char *topic, byte *payload, unsigned int length)
     Serial.println(value);
   Serial.print("payload: ");
   Serial.println(value);
-  freq = value;
+  freq = value*1000;
 }
 
 void reconnect()
@@ -137,11 +137,10 @@ void loop()
   if (now - lastMeasure > freq)
   {
     lastMeasure = now;
-    Serial.print("Seq loop: ");
-    Serial.print(freq);
-
     readTem();
     readMQ135();
+    Serial.print("Seq loop: ");
+    Serial.print(freq);
    client.publish("Warning Pollution", "canh bao"); 
   }
   
