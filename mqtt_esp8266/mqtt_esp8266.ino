@@ -16,8 +16,8 @@ DHT dht(dht_pin, DHT11);
 float h, t, f;
 // Update these with values suitable for your network.
 
-const char *ssid = "THREE O'CLOCK";
-const char *password = "3open24h";
+//const char *ssid = "THREE O'CLOCK";
+//const char *password = "3open24h";
 const char *mqtt_server = "192.168.1.245";
 
 WiFiClient espClient;
@@ -36,10 +36,10 @@ void setup_wifi()
   // We start by connecting to a WiFi network
   Serial.println();
   Serial.print("Connecting to ");
-  Serial.println(ssid);
+ // Serial.println(ssid);
 
-  WiFi.mode(WIFI_STA);
-  WiFi.begin(ssid, password);
+  //WiFi.mode(WIFI_STA);
+  //WiFi.begin(ssid, password);
 
   while (WiFi.status() != WL_CONNECTED)
   {
@@ -53,6 +53,7 @@ void setup_wifi()
   Serial.println("WiFi connected");
   Serial.println("IP address: ");
   Serial.println(WiFi.localIP());
+  configWifiManager();
 }
 
 void callback(char *topic, byte *payload, unsigned int length)
@@ -131,7 +132,7 @@ void loop()
   client.loop();
 
   now = millis();
-  // client.subscribe("room/frequencyout");
+  client.subscribe("room/frequencyout");
 
   if (now - lastMeasure > freq)
   {
@@ -141,7 +142,9 @@ void loop()
 
     readTem();
     readMQ135();
+   client.publish("Warning Pollution", "canh bao"); 
   }
+  
 }
 
 void readTem()
@@ -185,7 +188,7 @@ void configWifiManager() {
   WiFiManager wifiManager;
   wifiManager.setAPCallback(configModeCallback);
 
-  if (!wifiManager.autoConnect()) {
+  if (!wifiManager.autoConnect("TREESS")) {
     Serial.println("failed to connect and hit timeout");
     //reset and try again, or maybe put it to deep sleep
     ESP.reset();
@@ -196,8 +199,8 @@ void configWifiManager() {
 void configModeCallback (WiFiManager *myWiFiManager) {
   WiFiManager wifiManager;
   Serial.print("Stored SSID: ");
-  Serial.println(myWiFiManager->getSSID());
+  Serial.println(myWiFiManager->getConfigPortalSSID());
   Serial.print("Stored passphrase: ");
-  Serial.println(myWiFiManager->getPassword());
+  //Serial.println(myWiFiManager->getPassword());
 
 }
