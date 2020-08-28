@@ -1,31 +1,24 @@
 #include <ESP8266WiFi.h>
 #include <PubSubClient.h>
-
 #include <DHT.h>
 #include "MQ135.h"
 #include <string.h>
-
 //Wifi Manager
 #include <DNSServer.h>
 #include <ESP8266WebServer.h>
 #include <WiFiManager.h>     
 
 #include <FirebaseESP8266.h>
-
-
-
 #define FIREBASE_HOST "https://air-pollution-3ae9f.firebaseio.com/"
 #define FIREBASE_AUTH "0lZIUXRG5JyCDo928qxRy3AWwYNeT1qsAfzrZTaw"
-
 FirebaseData firebaseData;
 
 int dht_pin = 5;
-
 DHT dht(dht_pin, DHT11);
 
 float h, t, f;
 float rzero;
-// Update these with values suitable for your network.
+
 
 //const char *ssid = "THREE O'CLOCK";
 //const char *password = "3open24h";
@@ -46,14 +39,8 @@ void setup_wifi()
 {
 
   delay(10);
-  // We start by connecting to a WiFi network
   Serial.println();
   Serial.print("Connecting to ");
- // Serial.println(ssid);
-
-  //WiFi.mode(WIFI_STA);
-  //WiFi.begin(ssid, password);
-
   while (WiFi.status() != WL_CONNECTED)
   {
     delay(500);
@@ -88,9 +75,8 @@ void callback(char *topic, byte *payload, unsigned int length)
   char *end = nullptr;
   long value = strtol(buffer, &end, 10);
 
-  // Check for conversion errors
   if (end == buffer)
-    ; // Conversion error occurred
+    ; 
   else
     Serial.println(value);
   Serial.print("payload: ");
@@ -100,7 +86,7 @@ void callback(char *topic, byte *payload, unsigned int length)
 
 void reconnect()
 {
-  // Loop until we're reconnected
+
   while (!client.connected())
   {
     Serial.print("Attempting MQTT connection...");
@@ -129,7 +115,7 @@ void reconnect()
 
 void setup()
 {
-  pinMode(BUILTIN_LED, OUTPUT); // Initialize the BUILTIN_LED pin as an output
+ 
   Serial.begin(115200);
   setup_wifi();
   client.setServer(mqtt_server, 1883);
@@ -175,10 +161,13 @@ void readTem()
     t = 0;
     return;
   }
+  Serial.println("Humidity: ");
   Serial.println(h);
+  Serial.println("Temperature: ");
   Serial.println(t);
-  delay(1000);
+
   float hic = dht.computeHeatIndex(t, h, false);
+  
   static char temperatureTemp[7];
   dtostrf(hic, 6, 2, temperatureTemp);
 
@@ -187,9 +176,7 @@ void readTem()
 
   client.publish("room/temp", temperatureTemp);
   client.publish("room/humidity", humidityTemp);
-  
-//  Firebase.setInt(firebaseData,strcat(result,"/temp"), t);
-//  Firebase.setInt(firebaseData,strcat(result,"/humidity"), h);
+
 }
 
 void readMQ135()
@@ -201,8 +188,6 @@ void readMQ135()
   static char gasTemp[7];
   dtostrf(rzero, 6, 2, gasTemp);
   client.publish("room/gas", gasTemp);
-
-// /Firebase.setInt(firebaseData,strcat(result,"/gas"), rzero);
 }
 
 void configWifiManager() {
