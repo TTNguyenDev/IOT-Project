@@ -155,7 +155,9 @@ void loop()
     readTem();
     readMQ135(); 
     updataServer();
-    client.publish("Warning Pollution", "canh bao"); 
+    if(rzero > 700) {
+      client.publish("Warning Pollution", "canh bao khi gas vuot nguong an toan"); 
+    }
   }
   
 }
