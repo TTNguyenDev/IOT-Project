@@ -22,7 +22,7 @@ float rzero;
 
 //const char *ssid = "THREE O'CLOCK";
 //const char *password = "3open24h";
-const char *mqtt_server = "192.168.1.124";
+const char *mqtt_server = "192.168.1.37";
 
 WiFiClient espClient;
 PubSubClient client(espClient);
@@ -45,6 +45,7 @@ void setup_wifi()
   {
     delay(500);
     Serial.print(".");
+    configWifiManager();
   }
 
   randomSeed(micros());
@@ -79,7 +80,7 @@ void callback(char *topic, byte *payload, unsigned int length)
     ; 
   else
     Serial.println(value);
-  Serial.print("payload: ");
+  Serial.print("Recieved Frequency: ");
   Serial.println(value);
   freq = value*1000;
 }
@@ -117,6 +118,7 @@ void setup()
 {
  
   Serial.begin(115200);
+  WiFi.disconnect(true);
   setup_wifi();
   client.setServer(mqtt_server, 1883);
   client.setCallback(callback);
@@ -141,8 +143,9 @@ void loop()
     readTem();
     readMQ135(); 
     updataServer();
-    if(rzero > 700) {
+    if(rzero < 70) {
       client.publish("Warning Pollution", "canh bao khi gas vuot nguong an toan"); 
+      Serial.println("canh bao khi gas vuot nguong an toan");
     }
   }
   
